@@ -4,6 +4,8 @@
   // Selector thật của YouTube Studio (hộp thoại "Vùng quảng cáo trong video")
   const SEL = {
     openBtn: '#place-manually-button',
+    navLink: 'ul#main-menu a[href]', // menu trái của trang video
+    m10nStatus: 'ytcp-video-monetization .m10n-text', // ô "Bật" / "Đang tắt" ở trang Kiếm tiền
     panel: 'ytve-ad-breaks-editor-options-panel',
     insertBtn: '.options-header ytcp-button',
     autoCb: '.auto-midroll-checkbox #checkbox',
@@ -90,13 +92,44 @@
   }
 
   // ---------- Các bước ----------
+  // Mở hộp thoại "Vùng quảng cáo trong video". Trả về null nếu mở được, ngược lại trả về lý do.
   async function ensureDialog() {
-    if (visible(insertBtn())) return true;
-    const open = document.querySelector(SEL.openBtn);
-    if (!visible(open)) return false;
+    if (visible(insertBtn())) return null;
+    if (!/^\/video\//.test(location.pathname)) {
+      return 'Hãy mở một video trong YouTube Studio (trang Chi tiết hoặc Kiếm tiền) rồi bấm lại.';
+    }
+
+    const openBtn = () => {
+      const b = document.querySelector(SEL.openBtn);
+      return visible(b) ? b : null;
+    };
+    const m10nReady = () =>
+      location.pathname.includes('/monetization') && (openBtn() || visible(document.querySelector(SEL.m10nStatus)));
+
+    if (!m10nReady()) {
+      // Đang ở trang khác của video (vd. /edit) -> bấm mục "Kiếm tiền" ở menu trái (Studio chuyển trang không tải lại)
+      const link = [...document.querySelectorAll(SEL.navLink)].find((a) => /\/video\/[^/]+\/monetization/.test(a.getAttribute('href')));
+      if (!link) return 'Video này không có tab Kiếm tiền (kênh chưa bật kiếm tiền).';
+      note('Đang chuyển sang tab Kiếm tiền…');
+      link.click();
+      if (!(await waitFor(m10nReady, 15000))) return 'Trang Kiếm tiền tải quá lâu. Hãy thử lại.';
+    }
+
+    const open = await waitFor(openBtn, 2500);
+    if (!open) {
+      const status = document.querySelector(SEL.m10nStatus)?.textContent.normalize('NFC') || '';
+      if (/tắt|\boff\b/i.test(status)) {
+        return 'Kiếm tiền của video đang tắt. Bật "Quảng cáo trên Trang xem và YouTube Premium" rồi Lưu, sau đó thử lại.';
+      }
+      return 'Không thấy nút "Xem lại vị trí đặt quảng cáo trong video". Hãy tick "Hiện quảng cáo trong video của tôi" (chỉ có ở video dài từ 8 phút).';
+    }
+
     note('Đang mở hộp thoại vị trí quảng cáo…');
     (open.querySelector('button') || open).click();
-    return !!(await waitFor(() => visible(insertBtn()), 10000));
+    if (!(await waitFor(() => visible(insertBtn()), 10000))) {
+      return 'Đã bấm mở nhưng hộp thoại vị trí quảng cáo không hiện. Hãy thử lại.';
+    }
+    return null;
   }
 
   async function disableAuto() {
@@ -132,9 +165,8 @@
     state = { task: 'insert', running: true, finished: false, stopped: false, points, results: points.map(() => null), note: '', noteKind: 'info' };
     emit();
     try {
-      if (!(await ensureDialog())) {
-        return note('Không mở được hộp thoại. Hãy vào tab "Kiếm tiền" của video (đã tick "Hiện quảng cáo trong video của tôi").', 'err');
-      }
+      const err = await ensureDialog();
+      if (err) return note(err, 'err');
       await sleep(800);
       await disableAuto();
 
@@ -169,9 +201,8 @@
     state = { task: 'clear', running: true, finished: false, stopped: false, points: [], results: [], note: '', noteKind: 'info' };
     emit();
     try {
-      if (!(await ensureDialog())) {
-        return note('Không mở được hộp thoại. Hãy vào tab "Kiếm tiền" của video (đã tick "Hiện quảng cáo trong video của tôi").', 'err');
-      }
+      const err = await ensureDialog();
+      if (err) return note(err, 'err');
       await sleep(800);
       const total = rows().length;
       await disableAuto();
