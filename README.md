@@ -29,11 +29,13 @@ Sau đó làm từ bước 2 ở trên, chọn thư mục `setquangcaoYT`.
 
 ## Sử dụng
 
-1. Trong YouTube Studio, mở video → **Kiếm tiền** (đã tick *Hiện quảng cáo trong video của tôi*).
+1. Trong YouTube Studio, mở một trang bất kỳ của video, ví dụ trang Chi tiết `https://studio.youtube.com/video/[videoID]/edit`. Video cần bật kiếm tiền và tick *Hiện quảng cáo trong video của tôi*.
 2. Bấm icon extension, dán tracklist vào ô **Tracklist**.
 3. Chọn cách chọn mốc và kiểm tra danh sách ở phần **Xem trước**.
-4. Bấm **Chèn vào YouTube Studio**. Extension tự mở hộp thoại *Vùng quảng cáo trong video*, bỏ tick *Vị trí quảng cáo tự động* và chèn từng mốc. Tiến trình hiện ngay trong phần Xem trước.
+4. Bấm **Chèn vào YouTube Studio**. Extension tự chuyển sang tab **Kiếm tiền** (nếu đang ở trang khác), mở hộp thoại *Vùng quảng cáo trong video*, bỏ tick *Vị trí quảng cáo tự động* và chèn từng mốc. Tiến trình hiện ngay trong phần Xem trước.
 5. Kiểm tra lại trong Studio rồi bấm **Tiếp tục → Lưu**. Extension không tự lưu.
+
+Nếu không mở được hộp thoại (video đang tắt kiếm tiền, chưa tick *Hiện quảng cáo trong video của tôi*, kênh chưa bật kiếm tiền…), extension dừng lại và báo lý do bên dưới các nút.
 
 Nút **Xoá hết** tắt vị trí tự động và xoá mọi vị trí quảng cáo trong hộp thoại (bấm 2 lần để xác nhận). YouTube cần ít nhất 1 vị trí quảng cáo mới cho bấm *Tiếp tục*, nên dùng nút này để dọn trước khi chèn bộ mốc mới.
 
