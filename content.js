@@ -23,12 +23,12 @@
     return b ? b.querySelector('button') || b : null;
   };
 
-  // "0:08:26:19" (H:MM:SS:FF) -> giây, bỏ frame
+  // Ô thời gian của YT luôn có frame ở cuối: "0:08:26:19" (H:MM:SS:FF), video < 1 giờ là "03:14:00" (MM:SS:FF)
   function tsToSec(v) {
     const p = v.trim().split(':').map(Number);
     if (p.some(isNaN)) return NaN;
-    const [h, m, s] = p.length >= 4 ? p : [0, ...p].slice(-3);
-    return h * 3600 + m * 60 + s;
+    p.pop(); // bỏ frame
+    return p.reduce((acc, n) => acc * 60 + n, 0);
   }
 
   // giây -> "H:MM:SS:00" (định dạng ô thời gian của YT)
