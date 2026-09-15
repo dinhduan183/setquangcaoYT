@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #1f1f1f;
+    --surface: #282828;
+    --surface-2: #323232;
+    --border: #3f3f3f;
+    --text: #f1f1f1;
+    --muted: #aaa;
+    --faint: #717171;
+    --accent: #3ea6ff;
+    --err: #ff6b62;
+    --ok: #3ecf6b;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    width: 420px; margin: 0; padding: 14px 16px 12px;
+    font: 13px/1.4 Roboto, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 36px; height: 36px; flex: none; }
+  h1 { font-size: 15px; font-weight: 600; margin: 0; }
+  header p { margin: 1px 0 0; color: var(--muted); font-size: 12px; }
+
+  section { margin-bottom: 12px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .meta { font-size: 12px; color: var(--muted); }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  textarea, .field {
+    width: 100%; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; outline: none;
+  }
+  textarea { height: 96px; padding: 8px 10px; resize: vertical; font: 12px/1.5 var(--mono); white-space: pre; overflow-x: auto; }
+  textarea:focus, .field:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--faint); }
+
+  .seg { display: flex; padding: 3px; gap: 3px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .seg label { flex: 1; position: relative; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span {
+    display: block; padding: 6px 4px; border-radius: 7px; text-align: center;
+    color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap;
+  }
+  .seg span:hover { color: var(--text); }
+  .seg input:checked + span { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px #4a4a4a; }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .hint { margin-top: 7px; color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 24px; }
+  .hint[hidden] { display: none; }
+  .hint b { color: var(--text); font-weight: 500; font-family: var(--mono); }
+  .field { width: 58px; padding: 2px 6px; text-align: center; font: 12px var(--mono); }
+
+  .list {
+    max-height: 162px; overflow: auto; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .row { display: grid; grid-template-columns: 22px 62px 1fr auto; gap: 8px; align-items: center; padding: 5px 10px; }
+  .row + .row { border-top: 1px solid #333; }
+  .row .i { color: var(--faint); font: 11px var(--mono); text-align: right; }
+  .row .t { font: 12px var(--mono); }
+  .row .song { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .row .song b { color: var(--text); font-weight: 500; margin-right: 4px; }
+  .row .gap { font: 11px var(--mono); color: var(--faint); }
+  .empty { padding: 18px 10px; text-align: center; color: var(--faint); }
+
+  /* Trạng thái khi đang chèn */
+  .row.running { background: rgba(62, 166, 255, .08); }
+  .row.running .i::after {
+    content: ""; display: inline-block; width: 9px; height: 9px; vertical-align: -1px;
+    border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  .row.ok .i { color: var(--ok); font-weight: 700; font-size: 12px; }
+  .row.exists .i { color: var(--faint); font-weight: 700; }
+  .row.exists .t { color: var(--muted); }
+  .row.fail .i, .row.fail .t { color: var(--err); font-weight: 700; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .bar { height: 3px; margin-bottom: 6px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+  .bar[hidden] { display: none; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+  .bar.done i { background: var(--ok); }
+  .bar.fail i { background: var(--err); }
+
+  textarea:disabled, .field:disabled, .seg input:disabled + span { opacity: .55; cursor: default; }
+
+  footer { display: flex; gap: 8px; margin-top: 14px; }
+  button {
+    height: 36px; padding: 0 16px; border: 0; border-radius: 18px; cursor: pointer;
+    font: 500 13px Roboto, "Segoe UI", system-ui, sans-serif;
+  }
+  #run { flex: 1; background: var(--accent); color: #0f0f0f; }
+  #run:hover { background: #65b8ff; }
+  #run:disabled { background: var(--surface-2); color: var(--faint); cursor: default; }
+  #stop { background: var(--surface-2); color: var(--text); }
+  #stop:hover:not(:disabled) { background: #3d3d3d; }
+  #clear { background: var(--surface-2); color: var(--err); }
+  #clear:hover:not(:disabled) { background: #3d3d3d; }
+  #clear.confirm { background: var(--err); color: #0f0f0f; }
+  #stop:disabled, #clear:disabled { color: var(--faint); cursor: default; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #status { margin-top: 8px; font-size: 12px; color: var(--muted); min-height: 17px; }
+  #status.err { color: var(--err); }
+  #status.ok { color: var(--ok); }
+</style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="icons/icon128.png" alt="">
+    <div>
+      <h1>Chèn quảng cáo theo tracklist</h1>
+      <p>YouTube Studio · Vùng quảng cáo trong video</p>
+    </div>
+  </header>
+
+  <section>
+    <div class="head">
+      <span class="label">Tracklist</span>
+      <span class="meta" id="trackCount"></span>
+    </div>
+    <textarea id="tracklist" spellcheck="false" wrap="off" placeholder="00:00:00 Bài 1&#10;00:03:01 Bài 2&#10;00:05:50 Bài 3&#10;…"></textarea>
+  </section>
+
+  <section>
+    <div class="head"><span class="label">Cách chọn mốc</span></div>
+    <div class="seg" role="radiogroup">
+      <label><input type="radio" name="mode" value="all"><span>Tất cả mốc</span></label>
+      <label><input type="radio" name="mode" value="standard" checked><span id="stdLabel">Bội số 7:00</span></label>
+      <label><input type="radio" name="mode" value="every2"><span>Mỗi 2 bài</span></label>
+    </div>
+    <div class="hint" data-mode="all">Chèn ở đầu mọi bài, trừ bài đầu tiên.</div>
+    <div class="hint" data-mode="standard">
+      Mốc <b id="halfUnit">3:30</b>, rồi mỗi <input type="text" id="unit" class="field" value="07:00"> — lấy điểm hết bài gần nhất.
+    </div>
+    <div class="hint" data-mode="every2">Hết bài <b>1, 2, 4, 6, 8, 10…</b></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="label">Xem trước</span>
+      <span class="meta" id="summary"></span>
+    </div>
+    <div class="bar" id="bar" hidden><i></i></div>
+    <div class="list" id="preview"></div>
+  </section>
+
+  <footer>
+    <button id="run">Chèn vào YouTube Studio</button>
+    <button id="clear" title="Tắt vị trí tự động và xoá mọi vị trí quảng cáo trong hộp thoại">Xoá hết</button>
+    <button id="stop">Dừng</button>
+  </footer>
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
