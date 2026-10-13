@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YT Ad Breaks từ Tracklist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Chèn vị trí quảng cáo giữa video YouTube Studio theo timestamp trong tracklist.",
   "permissions": ["storage", "activeTab"],
   "icons": {
