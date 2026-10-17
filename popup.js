@@ -47,7 +47,7 @@ function boundaries(tracks) {
 // Tiêu chuẩn: mốc unit/2 (~hết bài 1), rồi cứ mỗi unit: 7:00, 14:00, 21:00, 28:00...
 // Mỗi mốc lấy điểm hết bài gần nhất; từ quảng cáo thứ 3 phải cách điểm trước ≥ unit/2.
 function standardPoints(bounds, unit) {
-  if (!bounds.length || unit <= 0) return [];
+  if (!bounds.length || !(unit > 0)) return []; // cũng chặn NaN khi gõ sai
   const lastBound = bounds[bounds.length - 1].sec;
   const out = [];
   let last = 0;

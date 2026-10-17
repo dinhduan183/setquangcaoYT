@@ -55,7 +55,7 @@
   }
 
   // Đưa đầu phát (ô thời gian dưới timeline) tới mốc
-  async function seek(sec) {
+  async function seek(sec, delay = 400) {
     const input = document.querySelector(SEL.playhead);
     if (!visible(input)) throw new Error('Không thấy ô thời gian của timeline.');
     const value = secToFrame(sec);
@@ -66,7 +66,7 @@
       input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     }
     pressEnter(input);
-    await sleep(400);
+    await sleep(delay);
   }
 
   async function waitFor(fn, timeout = 5000, step = 150) {
@@ -82,6 +82,7 @@
   // ---------- Trạng thái, gửi về popup ----------
   // results[i]: null | 'running' | 'ok' | 'exists' | 'fail'
   let state = null;
+  const videoId = () => location.pathname.match(/^\/video\/([^/]+)/)?.[1] || null;
   function emit() {
     chrome.runtime.sendMessage({ type: 'state', state }).catch(() => {}); // popup đóng thì bỏ qua
   }
@@ -150,19 +151,33 @@
     const before = rows();
     if (before.some((r) => near(r.sec, sec))) return 'exists';
 
-    await seek(sec);
-    const btn = insertBtn();
-    if (!btn) throw new Error('Mất nút "Chèn vị trí quảng cáo".');
-    btn.click();
-    const ok = await waitFor(() => rows().some((r) => near(r.sec, sec)), 4000);
-    return ok ? 'ok' : 'fail';
+    // Vị trí mới không trùng mốc nào có từ trước
+    const added = () => rows().find((r) => !before.some((b) => near(b.sec, r.sec)));
+
+    // Lần 2 chờ tua lâu hơn, phòng máy/Studio chậm
+    for (const delay of [400, 1500]) {
+      await seek(sec, delay);
+      const btn = insertBtn();
+      if (!btn) throw new Error('Mất nút "Chèn vị trí quảng cáo".');
+      btn.click();
+      const row = await waitFor(added, 4000);
+      if (!row) return 'fail';
+      if (near(row.sec, sec)) return 'ok';
+
+      // Chèn nhầm chỗ (đầu phát chưa tới mốc) -> xoá vị trí sai rồi thử lại
+      const del = row.row.querySelector(SEL.deleteBtn);
+      if (!del) return 'fail';
+      (del.querySelector('button') || del).click();
+      if (!(await waitFor(() => !added(), 3000))) return 'fail';
+    }
+    return 'fail';
   }
 
   let stopFlag = false;
 
   async function run(points) {
     stopFlag = false;
-    state = { task: 'insert', running: true, finished: false, stopped: false, points, results: points.map(() => null), note: '', noteKind: 'info' };
+    state = { task: 'insert', videoId: videoId(), running: true, finished: false, stopped: false, points, results: points.map(() => null), note: '', noteKind: 'info' };
     emit();
     try {
       const err = await ensureDialog();
@@ -198,7 +213,7 @@
   // Xoá hết: tắt vị trí tự động rồi xoá từng vị trí thủ công
   async function clearAll() {
     stopFlag = false;
-    state = { task: 'clear', running: true, finished: false, stopped: false, points: [], results: [], note: '', noteKind: 'info' };
+    state = { task: 'clear', videoId: videoId(), running: true, finished: false, stopped: false, points: [], results: [], note: '', noteKind: 'info' };
     emit();
     try {
       const err = await ensureDialog();
@@ -238,7 +253,8 @@
       stopFlag = true;
       sendResponse({ ok: true });
     } else if (msg.type === 'getState') {
-      sendResponse(state);
+      // Kết quả lần chạy trước chỉ hiện lại khi vẫn đúng video đó
+      sendResponse(state && !state.running && state.videoId !== videoId() ? null : state);
     }
   });
 })();
