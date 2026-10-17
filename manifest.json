@@ -1,21 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "YT Ad Breaks từ Tracklist",
+  "name": "Ad Breaks từ Tracklist – cho YouTube Studio",
   "version": "1.0.2",
   "description": "Chèn vị trí quảng cáo giữa video YouTube Studio theo timestamp trong tracklist.",
   "permissions": ["storage", "activeTab"],
   "icons": {
-    "16": "new_icon.png",
-    "32": "new_icon.png",
-    "48": "new_icon.png",
-    "128": "new_icon.png"
+    "16": "icons/new_icon16.png",
+    "32": "icons/new_icon32.png",
+    "48": "icons/new_icon48.png",
+    "128": "icons/new_icon128.png"
   },
   "action": {
     "default_title": "Chèn quảng cáo theo tracklist",
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "new_icon.png",
-      "32": "new_icon.png"
+      "16": "icons/new_icon16.png",
+      "32": "icons/new_icon32.png"
     }
   },
   "content_scripts": [
